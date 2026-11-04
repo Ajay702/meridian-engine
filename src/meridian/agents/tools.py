@@ -19,9 +19,10 @@ import types
 import typing
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, get_args, get_origin
+from typing import Any, Literal, NotRequired, get_args, get_origin
 
 from pydantic import TypeAdapter, ValidationError
+from typing_extensions import TypedDict  # pydantic requires this one on Python < 3.12
 
 from meridian.core.types import ToolSpec
 
@@ -91,10 +92,10 @@ class ToolRegistry:
                 required.append(pname)
                 fields[pname] = tp
             else:
-                fields[pname] = typing.NotRequired[tp]
+                fields[pname] = NotRequired[tp]
         schema = {"type": "object", "properties": props, "required": required,
                   "additionalProperties": False}
-        td = typing.TypedDict(f"{fn.__name__}_args", fields)  # type: ignore[misc]
+        td = TypedDict(f"{fn.__name__}_args", fields)  # type: ignore[misc]
         tool_name = name or fn.__name__
         desc = inspect.getdoc(fn) or tool_name
         tool = Tool(tool_name, desc, fn, ToolSpec(name=tool_name, description=desc,
