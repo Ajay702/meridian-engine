@@ -1,0 +1,12 @@
+{"question": "How long do card refunds take to appear?", "relevant_docs": ["refunds"], "answer_contains": ["5 to 10 business days"]}
+{"question": "Within how many days can a monthly plan get a full refund?", "relevant_docs": ["refunds"], "answer_contains": ["14 days"]}
+{"question": "Are overage charges refundable?", "relevant_docs": ["refunds"], "answer_contains": ["non-refundable"]}
+{"question": "What uptime is guaranteed for Business plans?", "relevant_docs": ["sla"], "answer_contains": ["99.95"]}
+{"question": "What service credit applies when uptime drops below 99.0 percent?", "relevant_docs": ["sla"], "answer_contains": ["25 percent"]}
+{"question": "Does scheduled maintenance count as downtime?", "relevant_docs": ["sla"], "answer_contains": ["72 hours"]}
+{"question": "How often are encryption keys rotated?", "relevant_docs": ["security"], "answer_contains": ["90 days"]}
+{"question": "When are customers notified after a data breach?", "relevant_docs": ["security"], "answer_contains": ["72 hours"]}
+{"question": "How long are audit logs retained?", "relevant_docs": ["data-retention"], "answer_contains": ["1 year"]}
+{"question": "When is data permanently purged after account deletion?", "relevant_docs": ["data-retention"], "answer_contains": ["30 days"]}
+{"question": "How quickly are new workspaces provisioned?", "relevant_docs": ["onboarding"], "answer_contains": ["2 minutes"]}
+{"question": "How often should API keys be rotated?", "relevant_docs": ["onboarding"], "answer_contains": ["180 days"]}

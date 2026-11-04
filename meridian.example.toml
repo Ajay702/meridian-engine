@@ -1,0 +1,61 @@
+# Meridian engine configuration. Env overrides: MERIDIAN__<SECTION>__<KEY>=value
+
+# ---- providers: where requests can go -------------------------------------
+[[providers]]
+name = "local"
+kind = "mock"              # offline extractive model; no API key needed
+models = ["mock-large", "mock-small"]
+
+# [[providers]]
+# name = "anthropic"
+# kind = "anthropic"
+# api_key_env = "ANTHROPIC_API_KEY"
+# rpm = 1000
+
+# [[providers]]
+# name = "vllm"
+# kind = "openai_compatible"
+# base_url = "http://vllm:8000/v1"
+# rpm = 5000
+
+# ---- models: what the router chooses between ------------------------------
+[[models]]
+name = "mock-large"
+provider = "local"
+input_per_mtok = 3.0
+output_per_mtok = 15.0
+quality = 0.9
+
+[[models]]
+name = "mock-small"
+provider = "local"
+input_per_mtok = 0.25
+output_per_mtok = 1.25
+quality = 0.6
+
+# [[models]]
+# name = "claude-sonnet-5-5"
+# provider = "anthropic"
+# input_per_mtok = 3.0
+# output_per_mtok = 15.0
+# quality = 0.92
+
+[gateway]
+cache_enabled = true
+cache_threshold = 0.95
+max_retries = 2
+breaker_failure_threshold = 5
+breaker_reset_s = 30
+# tenant_budget_usd = 50.0
+
+[retrieval]
+chunk_size = 512
+chunk_overlap = 64
+top_k = 5
+candidate_k = 30
+mmr_lambda = 0.7
+
+[guardrails]
+redact_pii = true
+block_injection = true
+injection_threshold = 0.6
