@@ -98,16 +98,43 @@ Cross-cutting infrastructure, all with zero extra dependencies:
 
 ## Benchmarks
 
-`python benchmarks/bench.py` on an M-series laptop, single process:
+Measured on an Apple M4 laptop, Python 3.13, single process, offline mock provider (no API key). Engine numbers are the range over 3 runs of `python benchmarks/bench.py`.
+
+**What these numbers mean:** the mock provider answers instantly (or with a fixed simulated delay), so they measure **Meridian's own overhead**, not model speed. With a real model, add the provider's latency (usually 0.5–5 s) on top of these.
+
+### Engine
 
 | Scenario | Result |
 |---|---|
-| **Chaos failover**: 1,000 requests, primary provider fails 30% of calls | **86.5% → 100.0%** success with failover on; p50 unchanged at 40.5 ms |
-| **Hybrid retrieval**: 7,122 chunks, dense + BM25 + RRF + MMR | **p50 4.7 ms**, p95 6.5 ms per query; ~2,200 chunks/s ingest |
+| **Chaos failover**: 1,000 requests, primary provider fails 30% of calls (40 ms simulated latency) | **86.6–88.9% → 100.0%** success with failover on. p50 unchanged (40.6 ms). p95 rises from ~160 ms to ~200 ms, because a failed call is retried on the backup |
+| **Hybrid retrieval**: 7,122 chunks, dense + BM25 + RRF + MMR | **p50 4.6–4.8 ms**, p95 4.9–5.1 ms per query; 2,000–2,400 chunks/s ingest |
 | **Semantic cache**: 500 requests across 4 intents with case/punctuation variants | **99.2% hit rate**, 4 provider calls, 0.3 ms mean vs. ~30 ms uncached |
-| **Eval suite**: 12 labelled questions ([examples/eval.jsonl](examples/eval.jsonl)) | recall@5 1.00 · MRR 1.00 · groundedness 1.00 · answer match 1.00 |
+| **Eval suite**: 12 labelled questions ([examples/eval.jsonl](examples/eval.jsonl)) | recall@5 1.00 · MRR 1.00 · groundedness 1.00 · answer match 1.00 · p50 4.1 ms |
 
-These numbers come from a deliberately small and easy sample set (simple paraphrases, a 5-document corpus). They show the system working end to end. They are not leaderboard claims. Point the harness at your own corpus and labelled questions to get meaningful scores.
+### HTTP API, end to end
+
+`benchmarks/http_load.py` ingests the sample corpus over HTTP, then sends 3,000 `POST /v1/ask` requests and **checks every answer against the labelled expected text**, not just the status code. Server and load generator ran on the same laptop, single uvicorn worker.
+
+| Setup | Concurrency | Throughput | p50 | p95 | p99 | Correct answers |
+|---|---:|---:|---:|---:|---:|---:|
+| Cache off, no rate limit | 1 | 857 req/s | 1.1 ms | 1.3 ms | 1.7 ms | 100% |
+| Cache off, no rate limit | 32 | 533 req/s | 44 ms | 157 ms | 234 ms | 100% |
+| Cache on, no rate limit | 32 | 520 req/s | 45 ms | 141 ms | 230 ms | 100% |
+| **Default config** (600 rpm per provider) | 32 | **10 req/s** | 3.2 s | 3.2 s | 3.2 s | 100% |
+
+The last row is the rate limiter doing its job: by default each provider is limited to 600 requests per minute, so extra requests queue instead of failing. Raise `rpm` under `[[providers]]` to match your provider's real limit. At 32 concurrent connections, a single Python worker is the bottleneck. Run more uvicorn workers for more throughput.
+
+To reproduce:
+
+```bash
+make bench
+meridian --config meridian.example.toml serve --port 8080 &
+python benchmarks/http_load.py --url http://127.0.0.1:8080 --requests 3000 --concurrency 32
+```
+
+### Limits of these numbers
+
+The eval and cache numbers come from a deliberately small, easy sample set (simple paraphrases, a 5-document corpus). They show the system working end to end. They are not leaderboard claims. Point the harness at your own corpus and labelled questions to get meaningful scores.
 
 ---
 
@@ -115,7 +142,7 @@ These numbers come from a deliberately small and easy sample set (simple paraphr
 
 ```bash
 make install          # uv venv + editable install with dev tools
-make test             # 51 tests: pipeline, resilience, gateway, providers, retrieval, guardrails, agent, API
+make test             # 52 tests: pipeline, resilience, gateway, providers, retrieval, guardrails, agent, API
 make eval             # eval harness with CI thresholds
 make bench            # benchmarks above
 make serve            # API on :8080

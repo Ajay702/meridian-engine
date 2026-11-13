@@ -79,8 +79,14 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.cmd == "serve":
+        import os
+
         import uvicorn
 
+        # The server builds its Engine at import time from MERIDIAN_CONFIG, so pass
+        # --config through the environment; otherwise it would be silently ignored.
+        if args.config:
+            os.environ["MERIDIAN_CONFIG"] = str(Path(args.config).resolve())
         uvicorn.run("meridian.api.server:app", host=args.host, port=args.port)
         return 0
     return asyncio.run(_ask(args) if args.cmd == "ask" else _eval(args))
